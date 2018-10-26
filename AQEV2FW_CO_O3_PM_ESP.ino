@@ -66,7 +66,7 @@ boolean display_offline_mode_banner = false;
 RTC_DS3231 rtc;
 SdFat SD;
 
-#define MAX_SAMPLE_BUFFER_DEPTH (120) // 10 minutes @ 5 second resolution
+#define MAX_SAMPLE_BUFFER_DEPTH  (60) // 5 minutes @ 5 second resolution
 #define O3_SAMPLE_BUFFER          (0)
 #define A_PM1P0_SAMPLE_BUFFER     (1)
 #define A_PM2P5_SAMPLE_BUFFER     (2)
@@ -1778,6 +1778,15 @@ void initializeNewConfigSettings(void) {
         snprintf(command_buf, 127, "o3_sen %8.4f\r", sensitivity);
         configInject(command_buf);
         configInject(F("backup o3\r"));
+    }
+
+// if the stored sampling averaging interval is above 300, reduce it to 300
+    if(eeprom_read_word((uint16_t * ) EEPROM_AVERAGING_INTERVAL) > 300) {
+        if(!in_config_mode) {
+            configInject(F("aqe\r"));
+            in_config_mode = true;
+        }
+        configInject(F("sampling 5, 300, 60\r"));
     }
 
     if(in_config_mode) {
